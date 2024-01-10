@@ -16,13 +16,13 @@ mongo-express:
 local-env: mongo-express
 	docker-compose -p $(PROJECT_NAME) -f docker-compose-local-env.yml up -d
 
-submodule-update:
-	git submodule update --init --recursive
+# submodule-update:
+# 	git submodule update --init --recursive
 
-submodules-init=
-ifeq '$(SUBMODULES_INIT)' 'true'
-	submodules-init += submodule-update
-endif
+# submodules-init=
+# ifeq '$(SUBMODULES_INIT)' 'true'
+# 	submodules-init += submodule-update
+# endif
 
 $(NAME): $(submodules-init)
 	docker-compose -p $(PROJECT_NAME) -f docker-compose-$(NAME).yml up -d

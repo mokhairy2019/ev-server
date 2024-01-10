@@ -11,6 +11,7 @@ const MODULE_NAME = 'PricingFacade';
 export default class PricingFacade {
 
   public static async processStartTransaction(tenant: Tenant, transaction: Transaction, chargingStation: ChargingStation, consumption: Consumption, user: User): Promise<void> {
+    //TODO: Check if this part should be removed for ocpi processing
     if (!user?.issuer) {
       return;
     }
@@ -31,9 +32,9 @@ export default class PricingFacade {
   }
 
   public static async processUpdateTransaction(tenant: Tenant, transaction: Transaction, chargingStation: ChargingStation, consumption: Consumption, user: User): Promise<void> {
-    if (!user?.issuer) {
-      return;
-    }
+    // if (!user?.issuer) {
+    //   return;
+    // }
     const pricingImpl = await PricingFactory.getPricingImpl(tenant);
     if (pricingImpl) {
       const pricedConsumption = await pricingImpl.updateSession(transaction, consumption, chargingStation);
@@ -42,9 +43,9 @@ export default class PricingFacade {
   }
 
   public static async processStopTransaction(tenant: Tenant, transaction: Transaction, chargingStation: ChargingStation, consumption: Consumption, user: User): Promise<void> {
-    if (!user?.issuer) {
-      return;
-    }
+    // if (!user?.issuer) {
+    //   return;
+    // }
     const pricingImpl = await PricingFactory.getPricingImpl(tenant);
     if (pricingImpl) {
       const pricedConsumption = await pricingImpl.stopSession(transaction, consumption, chargingStation);
@@ -53,9 +54,9 @@ export default class PricingFacade {
   }
 
   public static async processEndTransaction(tenant: Tenant, transaction: Transaction, chargingStation: ChargingStation, consumption: Consumption, user: User): Promise<void> {
-    if (!user?.issuer) {
-      return;
-    }
+    // if (!user?.issuer) {
+    //   return;
+    // }
     const pricingImpl = await PricingFactory.getPricingImpl(tenant);
     if (pricingImpl) {
       const pricedConsumption = await pricingImpl.endSession(transaction, consumption, chargingStation);

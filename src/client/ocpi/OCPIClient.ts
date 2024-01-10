@@ -285,6 +285,7 @@ export default abstract class OCPIClient {
   }
 
   private async postCredentials(): Promise<OCPICredential> {
+    console.log('token', this.ocpiEndpoint.token);
     // Get credentials url
     const credentialsUrl = this.getEndpointUrl('credentials', ServerAction.OCPI_CREATE_CREDENTIALS);
     const credentials = await OCPIUtils.buildOcpiCredentialObject(this.tenant, this.ocpiEndpoint.localToken, this.ocpiEndpoint.role);
@@ -296,6 +297,7 @@ export default abstract class OCPIClient {
       detailedMessages: { credentials }
     });
     // Call eMSP with CPO credentials
+    console.log('token', this.ocpiEndpoint.token);
     const response = await this.axiosInstance.post(credentialsUrl, credentials,
       {
         headers: {

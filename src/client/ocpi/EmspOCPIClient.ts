@@ -421,7 +421,7 @@ export default class EmspOCPIClient extends OCPIClient {
 
   public async remoteStartSession(chargingStation: ChargingStation, connectorID: number, tagID: string): Promise<OCPICommandResponse> {
     // Get command endpoint url
-    const commandUrl = this.getEndpointUrl('commands', ServerAction.OCPI_EMSP_START_SESSION) + '/' + OCPICommandType.START_SESSION;
+    const commandUrl = this.getEndpointUrl('commands', ServerAction.OCPI_EMSP_START_SESSION) + OCPICommandType.START_SESSION;
     const callbackUrl = this.getLocalEndpointUrl('commands') + '/' + OCPICommandType.START_SESSION;
     const tag = await TagStorage.getTag(this.tenant, tagID, { withUser: true });
     if (!tag || !tag.issuer || !tag.active) {
@@ -484,7 +484,7 @@ export default class EmspOCPIClient extends OCPIClient {
 
   public async remoteStopSession(transactionID: number): Promise<OCPICommandResponse> {
     // Get command endpoint url
-    const commandUrl = this.getEndpointUrl('commands', ServerAction.OCPI_EMSP_START_SESSION) + '/' + OCPICommandType.STOP_SESSION;
+    const commandUrl = this.getEndpointUrl('commands', ServerAction.OCPI_EMSP_START_SESSION) + OCPICommandType.STOP_SESSION;
     const callbackUrl = this.getLocalEndpointUrl('commands') + '/' + OCPICommandType.STOP_SESSION;
     // Get transaction
     const transaction = await TransactionStorage.getTransaction(this.tenant, transactionID);

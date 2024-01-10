@@ -73,8 +73,9 @@ export default class CPOTariffsService {
 
   private static convertPricingSettings2ZeroFlatTariff(pricingSettings: PricingSettings): OCPITariff {
     let tariff: OCPITariff;
-    tariff.id = '1';
-    tariff.elements = [
+    tariff = {id : '1',
+    currency: 'EUR',
+    elements : [
       {
         price_components: [
           {
@@ -84,7 +85,7 @@ export default class CPOTariffsService {
           }
         ]
       }
-    ];
+    ], last_updated: new Date()};
     switch (pricingSettings.type) {
       case PricingSettingsType.SIMPLE:
         tariff.currency = pricingSettings.simple.currency;

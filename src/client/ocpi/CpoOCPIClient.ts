@@ -195,7 +195,7 @@ export default class CpoOCPIClient extends OCPIClient {
 
   public async authorizeToken(token: OCPIToken, chargingStation: ChargingStation, connector: Connector): Promise<string> {
     // Get tokens endpoint url
-    const tokensUrl = `${this.getEndpointUrl('tokens', ServerAction.OCPI_CPO_AUTHORIZE_TOKEN)}/${token.uid}/authorize`;
+    const tokensUrl = `${this.getEndpointUrl('tokens', ServerAction.OCPI_CPO_AUTHORIZE_TOKEN)}${token.uid}/authorize`;
     // Build payload
     const locationReference: OCPILocationReference = {
       location_id: chargingStation.siteID,
@@ -252,7 +252,7 @@ export default class CpoOCPIClient extends OCPIClient {
 
   public async startSession(ocpiToken: OCPIToken, chargingStation: ChargingStation, transaction: Transaction): Promise<void> {
     // Get tokens endpoint url
-    const sessionsUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalCountryCode(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${transaction.id.toString()}`;
+    const sessionsUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_PUSH_SESSIONS)}${this.getLocalCountryCode(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${transaction.id.toString()}`;
     const site = await SiteStorage.getSite(this.tenant, chargingStation.siteID);
     const ocpiLocation: OCPILocation = this.convertChargingStationToOCPILocation(this.tenant, site, chargingStation,
       transaction.connectorId, this.getLocalCountryCode(ServerAction.OCPI_CPO_PUSH_SESSIONS), this.getLocalPartyID(ServerAction.OCPI_CPO_PUSH_SESSIONS));
@@ -267,7 +267,7 @@ export default class CpoOCPIClient extends OCPIClient {
       location: ocpiLocation,
       currency: this.settings.currency,
       status: OCPISessionStatus.PENDING,
-      total_cost: 0, // Never calculate the cost of OCPI transaction
+      total_cost: transaction.currentCumulatedPrice,
       last_updated: transaction.timestamp
     };
     // Call IOP
@@ -304,11 +304,11 @@ export default class CpoOCPIClient extends OCPIClient {
       });
     }
     // Get tokens endpoint url
-    const sessionsUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalCountryCode(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${transaction.ocpiData.session.id}`;
+    const sessionsUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_PUSH_SESSIONS)}${this.getLocalCountryCode(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${transaction.ocpiData.session.id}`;
     // Update transaction
     transaction.ocpiData.session.kwh = Utils.createDecimal(transaction.currentTotalConsumptionWh).div(1000).toNumber();
     transaction.ocpiData.session.last_updated = transaction.currentTimestamp;
-    transaction.ocpiData.session.total_cost = 0; // Never calculate the cost of OCPI transaction
+    transaction.ocpiData.session.total_cost = transaction.currentCumulatedPrice;// Never calculate the cost of OCPI transaction
     transaction.ocpiData.session.currency = this.settings.currency;
     transaction.ocpiData.session.status = OCPISessionStatus.ACTIVE;
     transaction.ocpiData.session.charging_periods = await this.buildChargingPeriods(this.tenant, transaction);
@@ -317,7 +317,7 @@ export default class CpoOCPIClient extends OCPIClient {
       kwh: transaction.ocpiData.session.kwh,
       last_updated: transaction.ocpiData.session.last_updated,
       currency: transaction.ocpiData.session.currency,
-      total_cost: 0, // Never calculate the cost of OCPI transaction
+      total_cost: transaction.ocpiData.session.total_cost, // Never calculate the cost of OCPI transaction
       status: transaction.ocpiData.session.status,
       charging_periods: transaction.ocpiData.session.charging_periods
     };
@@ -358,9 +358,10 @@ export default class CpoOCPIClient extends OCPIClient {
       });
     }
     // Get tokens endpoint url
-    const tokensUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalCountryCode(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${transaction.ocpiData.session.id}`;
+    const tokensUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_PUSH_SESSIONS)}${this.getLocalCountryCode(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_PUSH_SESSIONS)}/${transaction.ocpiData.session.id}`;
     transaction.ocpiData.session.kwh = Utils.createDecimal(transaction.stop.totalConsumptionWh).div(1000).toNumber();
-    transaction.ocpiData.session.total_cost = 0; // Never calculate the cost of OCPI transaction
+    // TODO: should put the total cost back to zero
+    transaction.ocpiData.session.total_cost = transaction.stop.roundedPrice;
     transaction.ocpiData.session.end_datetime = transaction.stop.timestamp;
     transaction.ocpiData.session.last_updated = transaction.stop.timestamp;
     transaction.ocpiData.session.status = OCPISessionStatus.COMPLETED;
@@ -424,7 +425,8 @@ export default class CpoOCPIClient extends OCPIClient {
       auth_method: transaction.ocpiData.session.auth_method,
       location: transaction.ocpiData.session.location,
       authorization_id: transaction.ocpiData.session.authorization_id,
-      total_cost: 0, // Never calculate the cost of OCPI transaction
+      // TODO: should put the total cost back to zero
+      total_cost: transaction.stop.roundedPrice,
       charging_periods: await this.buildChargingPeriods(this.tenant, transaction),
       last_updated: transaction.stop.timestamp
     };
@@ -851,7 +853,7 @@ export default class CpoOCPIClient extends OCPIClient {
     const countryCode = this.getLocalCountryCode(ServerAction.OCPI_CPO_UPDATE_STATUS);
     const partyID = this.getLocalPartyID(ServerAction.OCPI_CPO_UPDATE_STATUS);
     // Build url to EVSE
-    const fullUrl = locationsUrl + `/${countryCode}/${partyID}/${locationId}/${evseUID}`;
+    const fullUrl = locationsUrl + `${countryCode}/${partyID}/${locationId}/${evseUID}`;
     // Build payload
     const evseStatus = { 'status': newStatus };
     // Call IOP
@@ -890,7 +892,7 @@ export default class CpoOCPIClient extends OCPIClient {
     // Check CDR
     const cdrsUrl = this.getEndpointUrl('cdrs', ServerAction.OCPI_CPO_CHECK_CDRS);
     const response = await this.axiosInstance.get(
-      `${cdrsUrl}/${transaction.ocpiData.cdr.id}`,
+      `${cdrsUrl}${transaction.ocpiData.cdr.id}`,
       {
         headers: {
           'Authorization': `Token ${this.ocpiEndpoint.token}`
@@ -955,7 +957,7 @@ export default class CpoOCPIClient extends OCPIClient {
     transaction.ocpiData.sessionCheckedOn = new Date();
     await TransactionStorage.saveTransactionOcpiData(this.tenant, transaction.id, transaction.ocpiData);
     // Check Session
-    const sessionsUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_CHECK_SESSIONS)}/${this.getLocalCountryCode(ServerAction.OCPI_CPO_CHECK_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_CHECK_SESSIONS)}/${transaction.ocpiData.session.id}`;
+    const sessionsUrl = `${this.getEndpointUrl('sessions', ServerAction.OCPI_CPO_CHECK_SESSIONS)}${this.getLocalCountryCode(ServerAction.OCPI_CPO_CHECK_SESSIONS)}/${this.getLocalPartyID(ServerAction.OCPI_CPO_CHECK_SESSIONS)}/${transaction.ocpiData.session.id}`;
     const response = await this.axiosInstance.get(
       sessionsUrl,
       {

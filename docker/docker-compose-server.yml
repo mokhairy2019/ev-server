@@ -8,7 +8,7 @@ services:
       context: ..
       dockerfile: docker/ev_server.Dockerfile
       args:
-        build: prod
+        build: dev
     ports:
     - 81:81
     - 8000:8000
@@ -19,10 +19,10 @@ services:
     external_links:
     - evse_mongodb_1
     - evse_mailserver_1
-    environment:
-      WAIT_HOSTS: ev_mongo:27017
-      WAIT_HOSTS_TIMEOUT: 90
-      WAIT_AFTER_HOSTS: 3
+    # environment:
+    #   WAIT_HOSTS: ev_mongo:27017
+    #   WAIT_HOSTS_TIMEOUT: 90
+    #   WAIT_AFTER_HOSTS: 3
     networks:
       ev_network:
         aliases:
