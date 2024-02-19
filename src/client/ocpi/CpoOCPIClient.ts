@@ -526,6 +526,7 @@ export default class CpoOCPIClient extends OCPIClient {
       issuer: true,
       ocpiSessionChecked: false
     }, Constants.DB_PARAMS_MAX_LIMIT);
+    console.log('transactions', transactions);
     if (!Utils.isEmptyArray(transactions.result)) {
       await Promise.map(transactions.result, async (transaction) => {
         result.total++;

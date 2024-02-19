@@ -36,6 +36,11 @@ export default class CPOSessionsService {
       });
     }
     // Get all sessions
+    console.log('tenant', tenant);
+    console.log('limit', limit);
+    console.log('offset', offset);
+    console.log('date_from', Utils.convertToDate(req.query.date_from));
+    console.log('date_to', Utils.convertToDate(req.query.date_to));
     const sessions = await CPOSessionsService.getAllSessions(tenant, limit, offset,
       Utils.convertToDate(req.query.date_from), Utils.convertToDate(req.query.date_to));
     // Set header

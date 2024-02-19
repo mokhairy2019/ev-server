@@ -678,6 +678,7 @@ export default class TransactionStorage {
     });
     // Add OCPI data
     if (!projectFields || projectFields && projectFields.includes('ocpi')) {
+      console.log('ocpiData');
       aggregation.push({
         $addFields: {
           'ocpi': { $gt: ['$ocpiData', null] }
@@ -779,6 +780,8 @@ export default class TransactionStorage {
     // Project
     DatabaseUtils.projectFields(aggregation, projectFields);
     // Read DB
+    console.log('ownerMatch', ownerMatch);
+    console.log('filters', filters);
     const transactionsMDB = await global.database.getCollection<any>(tenant.id, 'transactions')
       .aggregate<any>(aggregation, DatabaseUtils.buildAggregateOptions())
       .toArray() as Transaction[];
