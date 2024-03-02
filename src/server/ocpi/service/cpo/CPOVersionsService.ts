@@ -10,7 +10,7 @@ export default class CPOVersionsService {
       const versions = [
         {
           version: OCPIServerRouteVersions.VERSION_211,
-          url: `http://${req.get('host')}/ocpi/cpo/${OCPIServerRouteVersions.VERSION_211}/`
+          url: `https://${req.get('host')}/ocpi/cpo/${OCPIServerRouteVersions.VERSION_211}/`
         }
       ];
       res.json(OCPIUtils.success(versions));

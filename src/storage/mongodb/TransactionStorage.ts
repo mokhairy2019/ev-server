@@ -678,7 +678,6 @@ export default class TransactionStorage {
     });
     // Add OCPI data
     if (!projectFields || projectFields && projectFields.includes('ocpi')) {
-      console.log('ocpiData');
       aggregation.push({
         $addFields: {
           'ocpi': { $gt: ['$ocpiData', null] }

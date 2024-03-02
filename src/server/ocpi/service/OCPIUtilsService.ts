@@ -55,7 +55,7 @@ export default class OCPIUtilsService {
     // Get host from the req
     const host = req.get('host');
     // Return Service url
-    return `http://${host}`;
+    return `https://${host}`;
   }
 
   public static isSuccessResponse(response: OCPIResponse): boolean {
