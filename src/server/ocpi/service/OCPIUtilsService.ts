@@ -425,6 +425,8 @@ export default class OCPIUtilsService {
         currentTotalInactivitySecs: 0,
         currentCumulatedPrice: 0,
         currentCumulatedRoundedPrice: 0,
+        // calculate the total duration in seconds from the start date time
+        currentTotalDurationSecs: Math.round(moment.duration(moment().diff(moment(session.start_datetime))).asSeconds()),
         lastConsumption: {
           value: 0,
           timestamp: session.start_datetime
