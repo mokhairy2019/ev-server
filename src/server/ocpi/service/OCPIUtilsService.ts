@@ -425,8 +425,6 @@ export default class OCPIUtilsService {
         currentTotalInactivitySecs: 0,
         currentCumulatedPrice: 0,
         currentCumulatedRoundedPrice: 0,
-        // calculate the total duration in seconds from the start date time
-        currentTotalDurationSecs: Math.round(moment.duration(moment().diff(moment(session.start_datetime))).asSeconds()),
         lastConsumption: {
           value: 0,
           timestamp: session.start_datetime
@@ -467,6 +465,8 @@ export default class OCPIUtilsService {
       value: session.kwh * 1000,
       timestamp: session.last_updated
     };
+    // TODO: Make sure that this is the correct calculation for the total duration
+    transaction.currentTotalDurationSecs = Math.round(moment.duration(moment().diff(moment(session.start_datetime))).asSeconds())
     if (session.end_datetime || session.status === OCPISessionStatus.COMPLETED) {
       const stopTimestamp = session.end_datetime ? session.end_datetime : new Date();
       transaction.stop = {
