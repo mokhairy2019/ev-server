@@ -100,7 +100,7 @@ export default class CPOTokensService {
       });
     }
     const operator = OCPIUtils.buildOperatorName(countryCode, partyId);
-    if (tag.user.name !== operator) {
+    if (tag.user.firstName !== operator) {
       throw new AppError({
         module: MODULE_NAME, method: 'handlePutToken', action,
         errorCode: StatusCodes.CONFLICT,
@@ -214,7 +214,8 @@ export default class CPOTokensService {
   private static async getToken(tenant: Tenant, countryId: string, partyId: string, tokenId: string): Promise<OCPIToken> {
     const tag = await TagStorage.getTag(tenant, tokenId, { withUser: true });
     if (tag?.user) {
-      if (!tag.user.issuer && tag.user.name === OCPIUtils.buildOperatorName(countryId, partyId) && tag.ocpiToken) {
+      if (!tag.user.issuer && tag.user.firstName === OCPIUtils.buildOperatorName(countryId, partyId) && tag.ocpiToken) {
+        console.log("The requested tag ocpiToken is" , tag.ocpiToken);
         return tag.ocpiToken;
       }
     }
