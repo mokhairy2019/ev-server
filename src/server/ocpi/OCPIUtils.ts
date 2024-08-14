@@ -452,6 +452,7 @@ export default class OCPIUtils {
   }
 
   public static convertSimplePricingSettingToOcpiTariff(simplePricingSetting: SimplePricingSetting): OCPITariff {
+    //TODO: implement this method to convert a simple pricing setting to an OCPI tariff
     const tariff = {} as OCPITariff;
     tariff.id = '1';
     tariff.currency = simplePricingSetting.currency;

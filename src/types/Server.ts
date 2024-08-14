@@ -203,6 +203,7 @@ export enum ServerAction {
   OCPI_EMSP_RESERVE_NOW = 'OcpiEmspReserveNow',
   OCPI_EMSP_UNLOCK_CONNECTOR = 'OcpiEmspUnlockConnector',
   OCPI_EMSP_GET_TARIFF = 'OcpiEmspGetTariff',
+  OCPI_EMSP_PUT_TARIFF = 'OcpiEmspPutTariff',
 
   OICP_CPO_REQUEST = 'OicpCpoRequest',
   OICP_SETTINGS = 'OicpSettings',

@@ -32,7 +32,7 @@ import SitesAdminDynamicAuthorizationDataSource from './dynamic-data-source/Site
 import SitesOwnerDynamicAuthorizationDataSource from './dynamic-data-source/SitesOwnerDynamicAuthorizationDataSource';
 import Tag from '../types/Tag';
 import TagStorage from '../storage/mongodb/TagStorage';
-import Transaction from '../types/Transaction';
+import Transaction, { TransactionStatus } from '../types/Transaction';
 import TransactionStorage from '../storage/mongodb/TransactionStorage';
 import UserStorage from '../storage/mongodb/UserStorage';
 import UserToken from '../types/UserToken';
@@ -56,9 +56,18 @@ export default class Authorizations {
       Action.REFUND_TRANSACTION, context);
   }
 
-  public static async canStartTransaction(loggedUser: UserToken, chargingStation: ChargingStation): Promise<boolean> {
+  public static async canStartTransaction(tenant : Tenant ,loggedUser: UserToken, chargingStation: ChargingStation): Promise<boolean> {
     let context: AuthorizationContext;
     if (Utils.isComponentActiveFromToken(loggedUser, TenantComponents.ORGANIZATION)) {
+      // // check if there  are other sessions running by the user
+      // const transactions = await TransactionStorage.getTransactions(tenant, {
+      //   userIDs: [loggedUser.id],
+      //   status: TransactionStatus.ACTIVE
+      // }, Constants.DB_PARAMS_MAX_LIMIT);
+      // console.log(transactions);
+      // if (transactions.count > 0) {
+      //   return false;
+      // }
       if (!chargingStation || !chargingStation.siteID || !chargingStation.siteAreaID) {
         return false;
       }

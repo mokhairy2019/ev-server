@@ -12,6 +12,7 @@ export interface OCPICdr {
   location: OCPILocation;
   meter_id?: string;
   currency: string;
+  // TODO: Tariif is missing here according to the ocpi protocol documentation
   charging_periods: OCPIChargingPeriod[];
   total_cost?: number;
   total_energy: number;

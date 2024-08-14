@@ -72,16 +72,8 @@ export default class CPOTokensService {
     }
     // Retrieve token
     const tag = await TagStorage.getTag(tenant, tokenId, { withUser: true });
-    if (!tag) {
-      throw new AppError({
-        module: MODULE_NAME, method: 'handlePutToken', action,
-        errorCode: StatusCodes.NOT_FOUND,
-        message: `Token ID '${tokenId}' not found`,
-        ocpiError: OCPIStatusCode.CODE_2001_INVALID_PARAMETER_ERROR,
-        detailedMessages: { token }
-      });
-    }
-    if (tag.issuer) {
+    if (tag) {
+    if (tag?.issuer) {
       throw new AppError({
         module: MODULE_NAME, method: 'handlePutToken', action,
         errorCode: StatusCodes.NOT_FOUND,
@@ -90,7 +82,7 @@ export default class CPOTokensService {
         detailedMessages: { token, tag }
       });
     }
-    if (tag.user?.issuer) {
+    if (tag?.user?.issuer) {
       throw new AppError({
         module: MODULE_NAME, method: 'handlePutToken', action,
         errorCode: StatusCodes.NOT_FOUND,
@@ -100,7 +92,7 @@ export default class CPOTokensService {
       });
     }
     const operator = OCPIUtils.buildOperatorName(countryCode, partyId);
-    if (tag.user.firstName !== operator) {
+    if (tag?.user?.firstName !== operator) {
       throw new AppError({
         module: MODULE_NAME, method: 'handlePutToken', action,
         errorCode: StatusCodes.CONFLICT,
@@ -110,6 +102,12 @@ export default class CPOTokensService {
       });
     }
     await OCPIUtilsService.updateCreateTagWithEmspToken(tenant, token, tag, tag.user, ServerAction.OCPI_CPO_UPDATE_TOKEN);
+  }
+  else {
+    // Create token
+    const emspUser = await OCPIUtils.checkAndCreateEMSPUserFromToken(tenant, countryCode, partyId, token);
+    await OCPIUtilsService.updateCreateTagWithEmspToken(tenant, token, null, emspUser, ServerAction.OCPI_CPO_UPDATE_TOKEN);
+  }
     res.json(OCPIUtils.success());
     next();
   }

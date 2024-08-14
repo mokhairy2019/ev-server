@@ -6,6 +6,7 @@ import { OCPIConnector, OCPIConnectorFormat, OCPIConnectorType, OCPIPowerType, O
 import { OCPILocation, OCPILocationOptions, OCPILocationType, OCPIOpeningTimes } from '../../../types/ocpi/OCPILocation';
 import { OCPISession, OCPISessionStatus } from '../../../types/ocpi/OCPISession';
 import Transaction, { InactivityStatus } from '../../../types/Transaction';
+import BillingFacade from '../../../integration/billing/BillingFacade';
 
 import AppError from '../../../exception/AppError';
 import { ChargePointStatus } from '../../../types/ocpp/OCPPServer';
@@ -546,7 +547,7 @@ export default class OCPIUtilsService {
       inactivityStatus: Utils.getInactivityStatusLevel(
         transaction.chargeBox, transaction.connectorId, Utils.createDecimal(cdr.total_parking_time).mul(3600).toNumber()),
       meterStop: Utils.createDecimal(cdr.total_energy).mul(1000).toNumber(),
-      price: cdr.total_cost,
+      price: cdr.total_cost, // should add platform fee
       priceUnit: cdr.currency,
       pricingSource: PricingSource.OCPI,
       roundedPrice: Utils.truncTo(cdr.total_cost, 2),
@@ -563,6 +564,9 @@ export default class OCPIUtilsService {
     }
     transaction.ocpiData.cdr = cdr;
     await TransactionStorage.saveTransaction(tenant, transaction);
+    // TODO: Pricing
+    // TODO: Need to add Billing start transaction somewhere else in the beginning of the transaction
+    // TODO: Billing
     await OCPPUtils.updateChargingStationConnectorRuntimeDataWithTransaction(tenant, chargingStation, transaction, true);
   }
 
@@ -587,7 +591,7 @@ export default class OCPIUtilsService {
       });
     }
     // External organization
-    if (emspUser.issuer) {
+    if (emspUser?.issuer) {
       throw new AppError({
         module: MODULE_NAME, method: 'updateCpoToken', action,
         errorCode: StatusCodes.CONFLICT,

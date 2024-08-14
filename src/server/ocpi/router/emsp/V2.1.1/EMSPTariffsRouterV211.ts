@@ -14,12 +14,19 @@ export default class EMSPTariffsRouterV211 {
 
   public buildRoutes(): express.Router {
     this.buildRouteGetTariff();
+    this.buildRoutePutTariff();
     return this.router;
   }
 
+  // TODO: implement PUT and DELETE methods for tariffs
   protected buildRouteGetTariff(): void {
     this.router.get(`/${OCPIServerRoute.OCPI_TARIFFS}*`, async (req: Request, res: Response, next: NextFunction) => {
       await RouterUtils.handleOCPIServerAction(EMSPTariffsService.handleGetTariff.bind(this), ServerAction.OCPI_EMSP_GET_TARIFF, req, res, next);
+    });
+  }
+  protected buildRoutePutTariff(): void {
+    this.router.put(`/${OCPIServerRoute.OCPI_TARIFFS}*`, async (req: Request, res: Response, next: NextFunction) => {
+      await RouterUtils.handleOCPIServerAction(EMSPTariffsService.handlePutTariff.bind(this), ServerAction.OCPI_EMSP_PUT_TARIFF, req, res, next);
     });
   }
 }

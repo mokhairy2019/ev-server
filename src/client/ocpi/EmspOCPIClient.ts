@@ -405,7 +405,7 @@ export default class EmspOCPIClient extends OCPIClient {
     const countryCode = this.getLocalCountryCode(ServerAction.OCPI_EMSP_UPDATE_TOKENS);
     const partyID = this.getLocalPartyID(ServerAction.OCPI_EMSP_UPDATE_TOKENS);
     // Build url to IOP
-    const fullUrl = tokensUrl + `${countryCode}/${partyID}/${token.uid}`;
+    const fullUrl = tokensUrl + `/${countryCode}/${partyID}/${token.uid}`;
     // Call IOP
     await this.axiosInstance.put(
       fullUrl,
@@ -537,4 +537,52 @@ export default class EmspOCPIClient extends OCPIClient {
     });
     return response.data.data as OCPICommandResponse;
   }
+  // public async pullTariffs(partial = false): Promise<OCPIResult> {
+  //   // Result
+  //   const result: OCPIResult = {
+  //     success: 0,
+  //     failure: 0,
+  //     total: 0,
+  //     logs: []
+  //   };
+  //   // Perfs trace
+  //   const startTime = new Date().getTime();
+  //   // Get tariffs endpoint url
+  //   let tariffsUrl = this.getEndpointUrl('tariffs', ServerAction.OCPI_EMSP_GET_TARIFF);
+  //   let momentFrom: Moment;
+  //   if (partial) {
+  //     // Last 2 days by default
+  //     momentFrom = moment().utc().subtract(2, 'days').startOf('day');
+  //   } else {
+  //     // Last 2 weeks by default
+  //     momentFrom = moment().utc().subtract(2, 'weeks').startOf('day');
+  //   }
+  //   tariffsUrl = `${tariffsUrl}?date_from=${momentFrom.format()}&limit=10`;
+  //   let nextResult = true;
+  //   do {
+  //     // Call IOP
+  //     const response = await this.axiosInstance.get(
+  //       tariffsUrl,
+  //       {
+  //         headers: {
+  //           Authorization: `Token ${this.ocpiEndpoint.token}`
+  //         },
+  //       });
+  //     const tariffs = response.data.data as OCPIToken[];
+  //     if (!Utils.isEmptyArray(tariffs)) {
+  //       await Promise.map(tariffs, async (tariff: OCPIToken) => {
+  //         try {
+  //           await OCPIUtilsService.processEmspTariff(this.tenant, tariff, ServerAction.OCPI_EMSP_GET_TARIFFS);
+  //           result.success++;
+  //         }
+  //         catch (error) {
+  //           result.failure++;
+  //           result.logs.push(
+  //             `Failed to update Tariff ID '${tariff.id}': ${error.message as string}`
+  //           );
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }

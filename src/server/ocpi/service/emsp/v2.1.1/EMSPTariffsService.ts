@@ -31,6 +31,7 @@ export default class EMSPTariffsService {
         ocpiError: OCPIStatusCode.CODE_2001_INVALID_PARAMETER_ERROR
       });
     }
+    //TODO: the whole tariff system should be implemented, including adding database object for tariffs
     let tariff: OCPITariff = {} as OCPITariff;
     if (tenant.components?.pricing?.active) {
       // Get simple pricing settings
@@ -46,6 +47,28 @@ export default class EMSPTariffsService {
         });
       }
     }
+    res.json(OCPIUtils.success(tariff));
+    next();
+  }
+  public static async handlePutTariff(action: ServerAction, req: Request, res: Response, next: NextFunction): Promise<void> {
+    const { tenant } = req;
+    const urlSegment = req.path.substring(1).split('/');
+    // Remove action
+    urlSegment.shift();
+    // Get filters
+    const countryCode = urlSegment.shift();
+    const partyId = urlSegment.shift();
+    const tariffId = urlSegment.shift();
+    if (!countryCode || !partyId || !tariffId) {
+      throw new AppError({
+        module: MODULE_NAME, method: 'handlePutTariff', action,
+        errorCode: HTTPError.GENERAL_ERROR,
+        message: 'Missing request parameters',
+        ocpiError: OCPIStatusCode.CODE_2001_INVALID_PARAMETER_ERROR
+      });
+    }
+    let tariff: OCPITariff = {} as OCPITariff;
+    // check if the tariff exists in the database and update it if it does or create a new one if it doesn't
     res.json(OCPIUtils.success(tariff));
     next();
   }

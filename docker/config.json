@@ -83,7 +83,7 @@
   },
   "Storage": {
     "implementation": "mongodb",
-    "uri": "mongodb+srv://mokhairy:mokhairy@cluster0.ntzbwgw.mongodb.net/PRD",
+    "uri": "mongodb+srv://mokhairy:mokhairy@cluster0.ntzbwgw.mongodb.net/test",
     "debug": false,
     "poolSize": 10
   },

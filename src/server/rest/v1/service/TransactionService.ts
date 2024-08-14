@@ -268,6 +268,17 @@ export default class TransactionService {
     // Check dynamic auth
     const { chargingStation } = await TransactionService.checkAndGetChargingStationConnector(
       action, req.tenant, req.user, remoteStartRequest.chargingStationID, remoteStartRequest.args.connectorId, Action.REMOTE_START_TRANSACTION);
+    // check if the user is allowed to start a transaction
+    if (!await Authorizations.canStartTransaction(req.tenant, req.user, chargingStation)) {
+      throw new AppAuthError({
+        errorCode: HTTPAuthError.FORBIDDEN,
+        user: req.user,
+        actionOnUser: remoteStartRequest.userID,
+        entity: Entity.TRANSACTION,
+        action: Action.REMOTE_START_TRANSACTION,
+        module: MODULE_NAME, method: 'handleTransactionStart'
+      });
+    }
     // Handle the routing
     if (chargingStation.issuer) {
       // OCPP Remote Start
