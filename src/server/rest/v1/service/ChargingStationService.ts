@@ -698,6 +698,15 @@ export default class ChargingStationService {
         // Start Transaction
         result = await ChargingStationService.handleOcpiStartTransaction(
           action, req.tenant, chargingStation, req.user, remoteStartRequest);
+        await Logging.logInfo({
+          tenantID: req.tenant.id,
+          action, user: req.user,
+          module: MODULE_NAME, method: 'handleOcpiStartTransaction',
+          message: 'Reading result contents',
+          detailedMessages: {
+            'result content': result
+          }
+        });
       }
       // Stop Transaction
       if (action === ServerAction.OCPI_EMSP_STOP_SESSION) {
@@ -1389,7 +1398,7 @@ export default class ChargingStationService {
     if (Utils.isComponentActiveFromToken(loggedUser, TenantComponents.OCPI)) {
       // Remove charging station from ocpi
       try {
-        const ocpiClient = await OCPIClientFactory.getAvailableOcpiClient(tenant, OCPIRole.CPO) as CpoOCPIClient;
+        const ocpiClient = await OCPIClientFactory.getOcpiClientForChargingStation(tenant, OCPIRole.CPO, chargingStation) as CpoOCPIClient;
         let status: OCPIEvseStatus;
         // Force remove
         if (!chargingStation.public) {
@@ -1723,7 +1732,7 @@ export default class ChargingStationService {
     UtilsService.assertObjectExists(action, transaction, `Transaction ID '${remoteStopRequest.args.transactionId}' does not exist`,
       MODULE_NAME, 'handleOcpiStopTransaction', user);
     // Get OCPI client
-    const ocpiClient = await OCPIClientFactory.getAvailableOcpiClient(tenant, OCPIRole.EMSP) as EmspOCPIClient;
+    const ocpiClient = await OCPIClientFactory.getOcpiClientForChargingStation(tenant, OCPIRole.EMSP, chargingStation) as EmspOCPIClient;
     if (!ocpiClient) {
       throw new BackendError({
         ...LoggingHelper.getChargingStationProperties(chargingStation),
@@ -1755,8 +1764,8 @@ export default class ChargingStationService {
       }
       tagID = tag.id;
     }
-    // Get OCPI client
-    const ocpiClient = await OCPIClientFactory.getAvailableOcpiClient(tenant, OCPIRole.EMSP) as EmspOCPIClient;
+    // Get OCPI client corresponding to this specific Charging Station
+    const ocpiClient = await OCPIClientFactory.getOcpiClientForChargingStation(tenant, OCPIRole.EMSP, chargingStation) as EmspOCPIClient;
     if (!ocpiClient) {
       throw new BackendError({
         ...LoggingHelper.getChargingStationProperties(chargingStation),
