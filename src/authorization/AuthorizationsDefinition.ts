@@ -1347,6 +1347,13 @@ export const AUTHORIZATION_DEFINITION: AuthorizationDefinition = {
       },
       {
         resource: Entity.CHARGING_STATION, action: Action.LIST,
+        condition: {
+          Fn: 'custom:dynamicAuthorizations',
+          args: {
+            asserts: [],
+            filters: ['AssignedSites']
+          }
+        },
         attributes: [
           'id', 'inactive', 'connectorsStatus', 'connectorsConsumption', 'public', 'lastSeen', 'coordinates', 'issuer', 'voltage', 'distanceMeters',
           'siteAreaID', 'siteArea.id', 'siteArea.name', 'siteArea.siteID', 'site.name', 'siteArea.address', 'siteID', 'maximumPower', 'powerLimitUnit',
@@ -1360,27 +1367,27 @@ export const AUTHORIZATION_DEFINITION: AuthorizationDefinition = {
           'chargePoints.power','chargePoints.efficiency','chargePoints.connectorIDs'
         ]
       },
-      // {
-      //   resource: Entity.CHARGING_STATION, action: Action.READ,
-      //   condition: {
-      //     Fn: 'custom:dynamicAuthorizations',
-      //     args: {
-      //       asserts: [],
-      //       filters: ['AssignedSites']
-      //     }
-      //   },
-      //   attributes: [
-      //     'id','issuer','public','siteAreaID','lastSeen','inactive','forceInactive','manualConfiguration','voltage','coordinates','chargingStationURL', 'forceInactive',
-      //     'maximumPower', 'masterSlave', 'chargePoints.chargePointID','chargePoints.currentType','chargePoints.voltage','chargePoints.amperage','chargePoints.numberOfConnectedPhase',
-      //     'chargePoints.cannotChargeInParallel','chargePoints.sharePowerToAllConnectors','chargePoints.excludeFromPowerLimitation','chargePoints.ocppParamForPowerLimitation',
-      //     'chargePoints.power','chargePoints.efficiency','chargePoints.connectorIDs',
-      //     'connectors.status', 'connectors.type', 'connectors.power', 'connectors.errorCode', 'connectors.connectorId', 'connectors.currentTotalConsumptionWh',
-      //     'connectors.currentInstantWatts', 'connectors.currentStateOfCharge', 'connectors.info', 'connectors.vendorErrorCode', 'connectors.currentTransactionID',
-      //     'connectors.currentTotalInactivitySecs', 'connectors.phaseAssignmentToGrid', 'connectors.chargePointID', 'connectors.tariffID', 'connectors.currentTransactionDate', 'connectors.currentTagID',
-      //     'ocpiData.evses.capabilities',
-      //     'siteArea', 'site', 'siteID',
-      //   ]
-      // },
+      {
+        resource: Entity.CHARGING_STATION, action: Action.READ,
+        condition: {
+          Fn: 'custom:dynamicAuthorizations',
+          args: {
+            asserts: [],
+            filters: ['AssignedSites']
+          }
+        },
+        attributes: [
+          'id','issuer','public','siteAreaID','lastSeen','inactive','forceInactive','manualConfiguration','voltage','coordinates','chargingStationURL', 'forceInactive',
+          'maximumPower', 'masterSlave', 'chargePoints.chargePointID','chargePoints.currentType','chargePoints.voltage','chargePoints.amperage','chargePoints.numberOfConnectedPhase',
+          'chargePoints.cannotChargeInParallel','chargePoints.sharePowerToAllConnectors','chargePoints.excludeFromPowerLimitation','chargePoints.ocppParamForPowerLimitation',
+          'chargePoints.power','chargePoints.efficiency','chargePoints.connectorIDs',
+          'connectors.status', 'connectors.type', 'connectors.power', 'connectors.errorCode', 'connectors.connectorId', 'connectors.currentTotalConsumptionWh',
+          'connectors.currentInstantWatts', 'connectors.currentStateOfCharge', 'connectors.info', 'connectors.vendorErrorCode', 'connectors.currentTransactionID',
+          'connectors.currentTotalInactivitySecs', 'connectors.phaseAssignmentToGrid', 'connectors.chargePointID', 'connectors.tariffID', 'connectors.currentTransactionDate', 'connectors.currentTagID',
+          'ocpiData.evses.capabilities',
+          'siteArea', 'site', 'siteID',
+        ]
+      },
       {
         resource: Entity.CHARGING_STATION, action: [Action.RESERVE_NOW, Action.REMOTE_START_TRANSACTION, Action.REMOTE_STOP_TRANSACTION],
         condition: {
