@@ -14,9 +14,9 @@ const MODULE_NAME = 'BillingFacade';
 
 export default class BillingFacade {
   public static async processStartTransaction(tenant: Tenant, transaction: Transaction, chargingStation: ChargingStation, siteArea: SiteArea, user: User): Promise<void> {
-    // if (!user?.issuer) {
-    //   return;
-    // }
+    if (!user?.issuer) {
+      return;
+    }
     const billingImpl = await BillingFactory.getBillingImpl(tenant);
     if (billingImpl) {
       try {

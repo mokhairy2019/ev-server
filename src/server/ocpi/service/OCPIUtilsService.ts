@@ -364,6 +364,7 @@ export default class OCPIUtilsService {
       });
     }
     // Create Transaction
+    // @ts-ignore
     if (!transaction) {
       newTransaction = true;
       // Get the Tag
@@ -431,6 +432,10 @@ export default class OCPIUtilsService {
           timestamp: session.start_datetime
         },
       } as Transaction;
+      // Pricing
+      // await Pricing.processStartTransaction(tenant, transaction, chargingStation, null, user);
+      // Billing
+      await BillingFacade.processStartTransaction(tenant, transaction, chargingStation, chargingStation.siteArea, user);
     }
     // Set the connector
     const connector = Utils.getConnectorFromID(chargingStation, transaction.connectorId);
@@ -567,6 +572,7 @@ export default class OCPIUtilsService {
     // TODO: Pricing
     // TODO: Need to add Billing start transaction somewhere else in the beginning of the transaction
     // TODO: Billing
+    // Bill
     await OCPPUtils.updateChargingStationConnectorRuntimeDataWithTransaction(tenant, chargingStation, transaction, true);
   }
 
