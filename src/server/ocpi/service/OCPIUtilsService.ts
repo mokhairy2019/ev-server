@@ -6,9 +6,9 @@ import { OCPIConnector, OCPIConnectorFormat, OCPIConnectorType, OCPIPowerType, O
 import { OCPILocation, OCPILocationOptions, OCPILocationType, OCPIOpeningTimes } from '../../../types/ocpi/OCPILocation';
 import { OCPISession, OCPISessionStatus } from '../../../types/ocpi/OCPISession';
 import Transaction, { InactivityStatus } from '../../../types/Transaction';
-import BillingFacade from '../../../integration/billing/BillingFacade';
 
 import AppError from '../../../exception/AppError';
+import BillingFacade from '../../../integration/billing/BillingFacade';
 import { ChargePointStatus } from '../../../types/ocpp/OCPPServer';
 import ChargingStationStorage from '../../../storage/mongodb/ChargingStationStorage';
 import Constants from '../../../utils/Constants';
@@ -28,6 +28,7 @@ import { OCPIToken } from '../../../types/ocpi/OCPIToken';
 import OCPIUtils from '../OCPIUtils';
 import OCPPUtils from '../../ocpp/utils/OCPPUtils';
 import { OcpiSetting } from '../../../types/Setting';
+import PricingFacade from '../../../integration/pricing/PricingFacade';
 import { PricingSource } from '../../../types/Pricing';
 import { Request } from 'express';
 import RoamingUtils from '../../../utils/RoamingUtils';
@@ -298,6 +299,7 @@ export default class OCPIUtilsService {
 
   public static async processEmspTransactionFromSession(tenant: Tenant, session: OCPISession, action: ServerAction,
       transaction?: Transaction, user?: User): Promise<void> {
+    console.log('Entered this function !!!!')
     let newTransaction = false;
     if (!OCPIUtilsService.validateEmspSession(session)) {
       throw new AppError({
@@ -364,8 +366,8 @@ export default class OCPIUtilsService {
       });
     }
     // Create Transaction
-    // @ts-ignore
     if (!transaction) {
+      console.log('Create new transaction')
       newTransaction = true;
       // Get the Tag
       const tag = await TagStorage.getTag(tenant, session.auth_id, { withUser: true });
@@ -431,9 +433,39 @@ export default class OCPIUtilsService {
           value: 0,
           timestamp: session.start_datetime
         },
+        user: user,
+        authorizationID: user.authorizationID,
       } as Transaction;
+      // Get the first consumption
+      // Create Consumption
+      const consumption: Consumption = {
+        transactionId: transaction.id,
+        connectorId: transaction.connectorId,
+        chargeBoxID: transaction.chargeBoxID,
+        siteAreaID: transaction.siteAreaID,
+        siteID: transaction.siteID,
+        userID: transaction.userID,
+        pricingSource: transaction.pricingSource,
+        startedAt: new Date(transaction.lastConsumption.timestamp),
+        endedAt: new Date(session.last_updated),
+        consumptionWh: transaction.currentConsumptionWh,
+        consumptionAmps: Utils.convertWattToAmp(chargingStation, null, transaction.connectorId, transaction.currentConsumptionWh),
+        instantWatts: Math.floor(transaction.currentInstantWatts),
+        instantAmps: Utils.convertWattToAmp(chargingStation, null, transaction.connectorId, transaction.currentInstantWatts),
+        cumulatedConsumptionWh: transaction.currentTotalConsumptionWh,
+        cumulatedConsumptionAmps: Utils.convertWattToAmp(
+          chargingStation, null, transaction.connectorId, transaction.currentTotalConsumptionWh),
+        totalInactivitySecs: transaction.currentTotalInactivitySecs,
+        totalDurationSecs: transaction.stop ?
+          moment.duration(moment(transaction.stop.timestamp).diff(moment(transaction.timestamp))).asSeconds() :
+          moment.duration(moment(transaction.lastConsumption.timestamp).diff(moment(transaction.timestamp))).asSeconds(),
+        stateOfCharge: transaction.currentStateOfCharge,
+        currencyCode: session.currency,
+        cumulatedAmount: session.total_cost
+      };
+      console.log('firstConsumption', consumption);
       // Pricing
-      // await Pricing.processStartTransaction(tenant, transaction, chargingStation, null, user);
+      await PricingFacade.processStartTransaction(tenant, transaction, chargingStation, consumption, user);
       // Billing
       await BillingFacade.processStartTransaction(tenant, transaction, chargingStation, chargingStation.siteArea, user);
     }
@@ -463,7 +495,11 @@ export default class OCPIUtilsService {
     }
     // Create Consumption
     if (session.kwh > 0) {
-      await OCPIUtilsService.createAndSaveEmspConsumption(tenant, chargingStation, transaction, session);
+      const consumption = await OCPIUtilsService.createAndSaveEmspConsumption(tenant, chargingStation, transaction, session);
+      // Pricing
+      await PricingFacade.processUpdateTransaction(tenant, transaction, chargingStation, consumption, transaction.user);
+      // Billing
+      await BillingFacade.processUpdateTransaction(tenant, transaction, transaction.user);
     }
     transaction.ocpiData = { session };
     transaction.currentTimestamp = session.last_updated;
@@ -512,13 +548,24 @@ export default class OCPIUtilsService {
       });
     }
     // Get Transaction
-    const transaction = await TransactionStorage.getOCPITransactionBySessionID(tenant, cdr.id);
+    const transaction = await TransactionStorage.getOCPITransactionBySessionID(tenant, cdr.id, { withUser: true });
     if (!transaction) {
       throw new AppError({
         module: MODULE_NAME, method: 'processEmspCdr', action,
         errorCode: HTTPError.GENERAL_ERROR,
         message: `No Transaction found for OCPI Session ID '${cdr.id}'`,
         detailedMessages: { cdr },
+        ocpiError: OCPIStatusCode.CODE_2001_INVALID_PARAMETER_ERROR
+      });
+    }
+    // Check user
+    if (!transaction?.user) {
+      throw new AppError({
+        ...LoggingHelper.getTransactionProperties(transaction),
+        module: MODULE_NAME, method: 'processEmspCdr', action,
+        errorCode: HTTPError.GENERAL_ERROR,
+        message: 'User does not exist',
+        detailedMessages: { transactionData: LoggingHelper.shrinkTransactionProperties(transaction), cdr },
         ocpiError: OCPIStatusCode.CODE_2001_INVALID_PARAMETER_ERROR
       });
     }
@@ -552,7 +599,7 @@ export default class OCPIUtilsService {
       inactivityStatus: Utils.getInactivityStatusLevel(
         transaction.chargeBox, transaction.connectorId, Utils.createDecimal(cdr.total_parking_time).mul(3600).toNumber()),
       meterStop: Utils.createDecimal(cdr.total_energy).mul(1000).toNumber(),
-      price: cdr.total_cost, // should add platform fee
+      price: cdr.total_cost, // should add platform pricing model (can be different from the cdr.total_cost and can be function in cdr.total_cost)
       priceUnit: cdr.currency,
       pricingSource: PricingSource.OCPI,
       roundedPrice: Utils.truncTo(cdr.total_cost, 2),
@@ -568,11 +615,10 @@ export default class OCPIUtilsService {
       transaction.ocpiData = {};
     }
     transaction.ocpiData.cdr = cdr;
+    await BillingFacade.processStopTransaction(tenant, transaction, transaction.user);
     await TransactionStorage.saveTransaction(tenant, transaction);
     // TODO: Pricing
-    // TODO: Need to add Billing start transaction somewhere else in the beginning of the transaction
-    // TODO: Billing
-    // Bill
+    await BillingFacade.processEndTransaction(tenant, transaction, transaction.user);
     await OCPPUtils.updateChargingStationConnectorRuntimeDataWithTransaction(tenant, chargingStation, transaction, true);
   }
 
@@ -956,7 +1002,7 @@ export default class OCPIUtilsService {
     }
   }
 
-  private static async createAndSaveEmspConsumption(tenant: Tenant, chargingStation: ChargingStation, transaction: Transaction, session: OCPISession): Promise<void> {
+  private static async createAndSaveEmspConsumption(tenant: Tenant, chargingStation: ChargingStation, transaction: Transaction, session: OCPISession): Promise<Consumption> {
     const consumptionEnergyWh = Utils.createDecimal(session.kwh).mul(1000).minus(Utils.convertToFloat(transaction.lastConsumption.value)).toNumber();
     const consumptionDurationSecs = Utils.createDecimal(moment(session.last_updated).diff(transaction.lastConsumption.timestamp, 'milliseconds')).div(1000).toNumber();
     if (consumptionEnergyWh > 0 || consumptionDurationSecs > 0) {
@@ -1001,10 +1047,13 @@ export default class OCPIUtilsService {
         amount: consumptionAmount,
         roundedAmount: Utils.truncTo(consumptionAmount, 2),
         currencyCode: session.currency,
-        cumulatedAmount: session.total_cost
+        cumulatedAmount: session.total_cost,
+        toPrice: true //TODO check how to assign this one
       };
       await ConsumptionStorage.saveConsumption(tenant, consumption);
+      return consumption;
     }
+    return null;
   }
 
   private static validateEmspSession(session: OCPISession): boolean {
